@@ -3,12 +3,12 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+from pathlib import Path
 
 # ==== CONFIGURATION ====
 # File paths for data and resources
 PATH_CONNECTO = '/Users/ellenvanmaren/Desktop/Insel/PhD_Projects/EL_experiment/Codes/Softwares/Connecto/Connecto/'
-PATH_Data = '/Users/ellenvanmaren/Desktop/Insel/PhD_Projects/EL_experiment/Codes/EvM_Directed-cortico-limbic-dialog/Data'
-
+PATH_Data = os.path.join(Path(__file__).resolve().parent.parent, 'Data')
 # ==== LOAD DATA ====
 # Load necessary datasets
 labels = pd.read_csv(os.path.join(PATH_CONNECTO, 'resources', 'tables', 'data_atlas.csv'))

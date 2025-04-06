@@ -5,13 +5,12 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import networkx as nx
-
+from pathlib import Path
 # ===============================
 # Config: Set your Connecto path
 # ===============================
 PATH_CONNECTO = '/Users/ellenvanmaren/Desktop/Insel/PhD_Projects/EL_experiment/Codes/Softwares/Connecto/Connecto/'
-PATH_Data = '/Users/ellenvanmaren/Desktop/Insel/PhD_Projects/EL_experiment/Codes/EvM_Directed-cortico-limbic-dialog/Data'
-
+PPATH_Data = os.path.join(Path(__file__).resolve().parent.parent, 'Data')
 
 def load_data(path_connecto):
     """Load label and graph data from CSV files."""

@@ -7,12 +7,11 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import matplotlib.patches as patches
-
+from pathlib import Path
 # ==== CONFIGURATION ====
 PATH_CONNECTO = '/Users/ellenvanmaren/Desktop/Insel/PhD_Projects/EL_experiment/Codes/Softwares/Connecto/Connecto/'
 PATH_FTRACT = '/Volumes/vellen/PhD/EL_experiment/Analysis/FTRACT/probability_table.csv'
-PATH_Data = '/Users/ellenvanmaren/Desktop/Insel/PhD_Projects/EL_experiment/Codes/EvM_Directed-cortico-limbic-dialog/Data'
-
+PATH_Data = os.path.join(Path(__file__).resolve().parent.parent, 'Data')
 FIGSIZE = (5, 5)
 
 # ==== LOAD DATA ====
