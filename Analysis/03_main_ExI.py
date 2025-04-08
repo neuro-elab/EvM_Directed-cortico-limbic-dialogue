@@ -1,27 +1,12 @@
 import os
 import numpy as np
-import time
 import pandas as pd
-import sys
-import glob
 import warnings
 import h5py
 analysis_path = os.path.dirname(os.path.dirname(__file__))
-
-sys.path.insert(0, analysis_path)
-gf_dir = os.path.join(analysis_path, 'general_funcs')
-sys.path.insert(0, gf_dir)
-st_dir = os.path.join(analysis_path, 'sig_trial')
-sys.path.insert(0, gf_dir)
-gf_dir = os.path.join(analysis_path, 'IO')
-sys.path.insert(0, gf_dir)
-gf_dir = os.path.join(analysis_path, 'IO', 'IO_funcs')
-sys.path.insert(0, gf_dir)
-import re
 from ExI_funcs import ExI_func_across as IOf_across
 from general_funcs import basic_func as bf
 from general_funcs import load_summary as ls
-import statsmodels
 
 # I expect to see RuntimeWarnings in this block
 warnings.simplefilter("ignore", category=RuntimeWarning)
@@ -29,24 +14,14 @@ pd.options.mode.chained_assignment = None  # default='warn'
 
 sleepstate_labels = ['NREM', 'REM', 'Wake']
 
-folder = 'InputOutput'
-cond_folder = 'CR'
-sub_path = 'X:\\4 e-Lab\\'  # y:\\eLab
+folder = 'InputOutput' #keep original name of ExI to remain the code working
+cond_folder = 'CR' #define data set, for this project always CR
+sub_path = 'X:\\4 e-Lab\\'  # Path where subject data are stored
 
 color_elab = np.zeros((3, 3))
 color_elab[0, :] = np.array([31, 78, 121]) / 255
 color_elab[1, :] = np.array([189, 215, 238]) / 255
 color_elab[2, :] = np.array([0.256, 0.574, 0.431])
-
-
-CIRC_AREAS_FILEPATH = 'X:\\4 e-Lab\e-Lab shared code\Softwares\Connectogram\circ_areas.xlsx'
-tab_region = pd.read_excel(CIRC_AREAS_FILEPATH, sheet_name='plot_Community')
-tab_region = tab_region.sort_values('Order').reset_index(drop=True)
-regions_all = tab_region.Area.values
-region_col = tab_region.color.values
-
-CIRC_AREAS_FILEPATH = 'X:\\4 e-Lab\e-Lab shared code\Softwares\Connectogram\circ_areas.xlsx'
-atlas = pd.read_excel(CIRC_AREAS_FILEPATH, sheet_name='atlas')
 
 class main:
     def __init__(self, subj):
@@ -163,15 +138,15 @@ def start_subj(subj, cluster_method='similarity'):
     con_trial = pd.read_csv(file_con)
     con_trial = bf.add_sleepstate(con_trial)
     con_trial['Num'] = con_trial['Num'].astype('int')
+    # read EEG epcohed data
     h5_file = path_patient_analysis + '\\' + folder + '\\' + cond_folder + '\\data\\EEG_' + cond_folder + '.h5'
     print('loading h5')
     EEG_resp = h5py.File(h5_file)
     EEG_resp = EEG_resp['EEG_resp']
+    # get general ExI analysis
+    run_main.get_AUC_mean(con_trial, EEG_resp, 1)
+    #run sleep state specific analysis
     run_main.get_AUC_sleepstate_mean(con_trial, EEG_resp,0)
-    #run_main.get_AUC_mean( con_trial, EEG_resp, 1)
-    # add delay
-    #run_main.add_delay(con_trial, EEG_resp)
-    #run_main.get_AUC_sleepstate(con_trial, EEG_resp, 1)
     print(subj + ' ----- DONE')
 
 
