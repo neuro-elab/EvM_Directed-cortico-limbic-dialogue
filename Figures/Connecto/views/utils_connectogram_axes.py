@@ -106,11 +106,34 @@ def get_colors(color_style: str, edges: pd.DataFrame, index: int, r1, vmin: floa
 
     return col, col_out
 
+def get_edge_labels(edges: pd.DataFrame, index: int) -> ([str], [str]):
+    # Helper to convert any value to a safe string
+    def to_str(val):
+        if pd.isna(val):
+            return ""
+        elif isinstance(val, (int, float, np.number)):
+            return f"{val:+0.2f}"  # format numeric values with 1 decimal
+        else:
+            return str(val)  # convert everything else to string
+
+    # Default values
+    label = ""
+    label_out = ""
+
+    # If columns exist, extract safely
+    if "edge_label" in edges.columns:
+        label = to_str(edges.iloc[index]["edge_label"])
+
+    if "edge_label_out" in edges.columns:
+        label_out = to_str(edges.iloc[index]["edge_label_out"])
+
+    return label, label_out
+
 
 def plot_curved_text(ax, radius: float, theta_start: float, theta_end: float, abbreviation: str):
     center_angle = (theta_start + theta_end + np.pi) / 2.
     x, y = radius * np.cos(center_angle), radius * np.sin(center_angle)
     rotation = np.degrees(center_angle) - 90
 
-    ax.text(x, y, abbreviation + '.', rotation=rotation, rotation_mode='anchor', ha='center', va='center', fontsize=7,
+    ax.text(x, y, abbreviation, rotation=rotation, rotation_mode='anchor', ha='center', va='center', fontsize=7,
             color='white')

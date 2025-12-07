@@ -96,6 +96,7 @@ custom_cmap = mcolors.LinearSegmentedColormap.from_list("GrayToBlue", colors_gra
 
 plot_heatmap(connecto_matrix, stim_colors, vmax=0.75, cmap=custom_cmap, title="Connecto Response Probability")
 print('Fig 1h')
+
 # ==== PROCESS F-TRACT ====
 file_ftract = '/Volumes/vellen/PhD/EL_experiment/Analysis/FTRACT/probability_table.csv'
 df = pd.read_csv(file_ftract)

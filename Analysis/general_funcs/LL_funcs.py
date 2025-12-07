@@ -60,35 +60,6 @@ def get_LL_resp(data, Fs, IPI, t_0, win):  # specific for Int and IPI
     return resp_LL
 
 
-def get_N1peaks_mean(sc, rc, LL_CCEP, EEG_resp):
-    lists = LL_CCEP[
-        (LL_CCEP['Artefact'] == 0) & (LL_CCEP['Int'] >= 6) & (LL_CCEP['Chan'] == rc) & (LL_CCEP['Stim'] == sc)]
-    stimNum_all = lists.Num.values.astype('int')
-    resp_all = bf.zscore_CCEP(ff.lp_filter(np.mean(EEG_resp[rc, stimNum_all, :], 0), 40, Fs))
-    if np.max(abs(resp_all[Fs:int(1.5 * Fs)])) > 4:
-        start_resp = 0
-        peaks_all, properties_all = scipy.signal.find_peaks(abs(resp_all[int(t_0 * Fs):int((t_0 + 0.5) * Fs)]),
-                                                            height=1.5, prominence=0.05, distance=0.03 * Fs, width=1)  #
-        if len(peaks_all) > 0:
-            peaks_all = peaks_all[0]
-            w = \
-                scipy.signal.peak_widths(abs(resp_all[int(t_0 * Fs):int((t_0 + 0.5) * Fs)]), [peaks_all],
-                                         rel_height=0.5)[0]
-
-            start_resp = (peaks_all - w) / Fs - 0.01
-
-            if start_resp < 0.01:
-                start_resp = 0
-
-        pk, pk_s, p = get_peaks_all(resp_all, start_resp)
-
-    else:
-        pk_s = np.zeros((4, 1))
-        p = 0
-
-    return pk_s[0], p
-
-
 def get_LL_both(data, Fs, IPI, t_0=1, win=0.25):  # specific for Int and IPI
     # get LL of first and second pulse. put first pulse LL to nan if window is larger than IPI
     # t_0 = 5

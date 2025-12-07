@@ -4,10 +4,12 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from pathlib import Path
+from scipy import stats
 
 # ==== CONFIGURATION ====
 
 PATH_Data = os.path.join(Path(__file__).resolve().parent.parent, 'Data')
+PATH_fig  = '/Figures' # TODO
 # ==== LOAD DATA ====
 labels = pd.read_csv(os.path.join(PATH_Data, 'data_atlas.csv'))
 con_all = pd.read_csv(os.path.join(PATH_Data, 'data_con_figures.csv'))
@@ -28,7 +30,7 @@ regions_CX_col = [labels.loc[labels.region == lb, 'plot_color'].values[0] for lb
 
 # ==== REGION SELECTION ====
 # Choose a region for analysis (e.g., 'Hippocampus')
-region_sel = 'Hippocampus'
+region_sel = 'Amygdala'
 color_reg = labels.loc[labels.region == region_sel, 'plot_color'].values[0]
 
 # Filter data based on selected region and connection types
@@ -87,3 +89,45 @@ ax2.set_ylabel('', fontsize=6)  # Hide y-label for the second plot
 plt.tight_layout()
 plt.show()
 print('Fig3f')
+
+arr = []
+# Example regions (replace with your actual regions)
+for region_sel in ['Hippocampus', 'Amygdala']:
+    # data for boxplot
+    data_in = con_all[
+        ~np.isnan(con_all.ExI) & np.isin(con_all['StimR'], regions_CX) & (con_all['ChanR'] == region_sel)].reset_index(
+        drop=True)
+    data_out = con_all[
+        ~np.isnan(con_all.ExI) & np.isin(con_all['ChanR'], regions_CX) & (con_all['StimR'] == region_sel)].reset_index(
+        drop=True)
+
+    # Add condition column for boxplot data
+    data_out['Condition'] = 'out'
+    data_in['Condition'] = 'in'
+    data_plot_box = pd.concat([data_in, data_out]).reset_index(drop=True)
+
+    # Group by condition and extract AUC values
+    cond_groups = data_plot_box.groupby('Condition')['ExI']
+    dir1, dir2 = cond_groups.apply(list)
+
+    # Perform the unpaired Wilcoxon rank-sum test
+    #stat, p_value = ranksums(dir1, dir2)
+    stat, p_value = stats.mannwhitneyu(dir1, dir2, alternative='two-sided')
+
+    # Compute median and IQR for both groups
+    md1, IQR_low1, IQR_up1 = np.median(dir1), np.quantile(dir1, 0.25), np.quantile(dir1, 0.75)
+    md2, IQR_low2, IQR_up2 = np.median(dir2), np.quantile(dir2, 0.25), np.quantile(dir2, 0.75)
+
+    # Append results
+    arr.append([
+        region_sel,
+        f'{p_value:0.2e}',
+        f'{md1:0.2f} [{IQR_low1:0.2f}, {IQR_up1:0.2f}]',
+        len(dir1),
+        f'{md2:0.2f} [{IQR_low2:0.2f}, {IQR_up2:0.2f}]',
+        len(dir2)
+    ])
+
+# Create DataFrame with results
+df_results = pd.DataFrame(arr, columns=['Region', 'p-value', 'Values_In', 'N_In', 'Values_Out', 'N_Out'])
+df_results.to_excel(os.path.join(PATH_fig, 'fig3f_stats_ExI.xlsx'))

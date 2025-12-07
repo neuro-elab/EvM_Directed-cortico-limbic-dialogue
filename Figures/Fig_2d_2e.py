@@ -4,11 +4,13 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy.stats import linregress, pearsonr
+import scipy.stats as stats
 from pathlib import Path
-
+import itertools
 # ==== CONFIGURATION ====
 # Define the path to the Connecto software directory
 PATH_Data = os.path.join(Path(__file__).resolve().parent.parent, 'Data')
+PATH_output ='/Users/ellenvanmaren/Desktop/Insel/PhD_Projects/EL_experiment/Codes/DATA/Figures'
 # ==== LOAD DATA ====
 # Load the labels and connection data from CSV files
 labels = pd.read_csv(os.path.join(PATH_Data, 'data_atlas.csv'))
@@ -56,6 +58,54 @@ plt.tight_layout()
 # Show the plot
 plt.show()
 print('Fig 2d')
+## STATISTICS
+# ---- PAIRWISE WILCOXON (MANN–WHITNEY U) ----
+results = []
+pairs = list(itertools.combinations(group_label, 2))
+
+for g1, g2 in pairs:
+    data1 = df_plot[df_plot["Group"] == g1]["ExI"].dropna()
+    data2 = df_plot[df_plot["Group"] == g2]["ExI"].dropna()
+
+    stat, p = stats.mannwhitneyu(data1, data2, alternative='two-sided')
+
+    results.append({
+        "Group1": g1,
+        "Group2": g2,
+        "U_statistic": stat,
+        "p_value": p
+    })
+
+df_results = pd.DataFrame(results)
+
+# ---- SUMMARY TABLE ----
+summary_rows = []
+
+for g in group_label:
+    data = df_plot.loc[df_plot["Group"] == g, "ExI"].dropna()
+
+    median = np.median(data)
+    q1 = np.percentile(data, 25)
+    q3 = np.percentile(data, 75)
+    N = len(data)
+
+    summary_rows.append({
+        "Group": g,
+        "Median [IQR]": f"{median:.2f} [{q1:.2f}, {q3:.2f}]",
+        "N": N
+    })
+
+summary_table = pd.DataFrame(summary_rows)
+
+# ---- WRITE BOTH SHEETS TO ONE EXCEL FILE ----
+output_file = os.path.join(PATH_output, 'Fig_2d.xlsx')
+
+with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
+    df_results.to_excel(writer, sheet_name='stats', index=False)
+    summary_table.to_excel(writer, sheet_name='summary', index=False)
+
+print("Saved:", output_file)
+
 
 # ==== FILTER DATA FOR SCATTER PLOT ====
 # Filter the data for the scatter plot: Remove NaN values and ensure valid ranges for 'Sig' and 'AUC'

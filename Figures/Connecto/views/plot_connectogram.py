@@ -33,11 +33,12 @@ class ConnectogramPlotter:
         self.figure.show_con_all(self.data_con, color_style, cmap=cmap, vmin=vmin, vmax=vmax, lw_max=lw_scale)
 
     def show_plot_ax(self, color_style: str, h: str = 'r', cmap: str = None, vmin: float = None, vmax: float = None,
-                     lw_scale: int = 2, bi_dir: bool = False, arrow_end: bool = False):
+                     lw_scale: int = 2, bi_dir: bool = False, arrow_end: bool = False, plot_edge_label: bool = False,custom_label=None):
         # adding function to call from outside of GUI.
         self.figure.setData(self.data_con, self.data_nodes, h)
-        self.figure.plot_nodes(self.show_label)
-        self.figure.show_con_all(self.data_con, color_style, cmap=cmap, vmin=vmin, vmax=vmax, lw_max=lw_scale,bi_dir = bi_dir, arrow_end = arrow_end)
+        # define labels if not default
+        self.figure.plot_nodes(show_label=self.show_label,custom_label=custom_label)
+        self.figure.show_con_all(self.data_con, color_style, cmap=cmap, vmin=vmin, vmax=vmax, lw_max=lw_scale,bi_dir = bi_dir, arrow_end = arrow_end,plot_edge_label=plot_edge_label)
 
 # # Example usage:
 # plotter = ConnectogramPlotter()

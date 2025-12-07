@@ -61,14 +61,39 @@ def connectogram_region(df_plot, ax, area='Amygdala', metric='Sig', cs='area', c
     df_plot = df_plot.loc[(df_plot.lw_out > 0) & (df_plot.lw > 0) & (df_plot.DI > 0) &
                           ((np.isin(df_plot.StimR, area)) | (np.isin(df_plot.ChanR, area)))].reset_index(drop=True)
 
+    custom_label = None
+    if "region_label" in df_plot.columns:
+        custom_label = {}
+        # Mapping from ChanR
+        chan_map = (
+            df_plot[["ChanR", "region_label"]]
+            .dropna(subset=["ChanR"])
+            .assign(region_label=lambda x: x["region_label"].astype(str))
+            .set_index("ChanR")["region_label"]
+            .to_dict()
+        )
+        custom_label.update(chan_map)
+        # Mapping from StimR
+        stim_map = (
+            df_plot[["StimR", "region_label"]]
+            .dropna(subset=["StimR"])
+            .assign(region_label=lambda x: x["region_label"].astype(str))
+            .set_index("StimR")["region_label"]
+            .to_dict()
+        )
+        # remove mapping for selected area (area_sel)
+        custom_label.update(stim_map)
+        if area in custom_label:
+            del custom_label[area]
+
     if np.sum(df_plot.show) > 0:
         plotter_connecto = ConnectogramPlotter(df_plot, ax)
         plotter_connecto.load_data(df_plot)
-        plotter_connecto.show_plot_ax(color_style=cs, cmap=cmap, vmin=vlim[0], vmax=vlim[1], arrow_end=True, lw_scale=2)
+        plotter_connecto.show_plot_ax(color_style=cs, cmap=cmap, vmin=vlim[0], vmax=vlim[1], arrow_end=True, lw_scale=3,custom_label=custom_label,plot_edge_label =True)
 
     return ax
 
-def connectogram_region_sleep_mod(df_plot, ax, area='Amygdala', cs='area'):
+def connectogram_region_sleep_mod(df_plot, ax, vlim = [-0.25, 0.25], area='Amygdala', cs='area'):
     import matplotlib.colors as mcolors
     import matplotlib as mpl
 
@@ -84,16 +109,46 @@ def connectogram_region_sleep_mod(df_plot, ax, area='Amygdala', cs='area'):
         seismic_gray = mpl.colormaps['seismic_gray']
 
     # Define the colormap and vlim based on the metric
-    vlim = [-0.4, 0.4]
+    #vlim = [-0.4, 0.4]
+    # vlim = [-0.25, 0.25]
     df_plot['show'] = 1
 
     df_plot.loc[np.isin(df_plot.ChanR, area), 'sort'] = 1
     df_plot = df_plot.sort_values(by=['sort']).reset_index(drop=True)
 
+    custom_label = None
+    if "region_label" in df_plot.columns:
+        custom_label = {}
+        # Mapping from ChanR
+        chan_map = (
+            df_plot[["ChanR", "region_label"]]
+            .dropna(subset=["ChanR"])  # ensure valid StimR
+            .assign(region_label=lambda x: x["region_label"].apply(
+                lambda v: f"{int(v)}" if isinstance(v, (int, float, np.number)) and not pd.isna(v) else str(v)
+            ))
+            .set_index("ChanR")["region_label"]
+            .to_dict()
+        )
+        custom_label.update(chan_map)
+        # Mapping from StimR
+        stim_map = (
+            df_plot[["StimR", "region_label"]]
+            .dropna(subset=["StimR"])  # ensure valid StimR
+            .assign(region_label=lambda x: x["region_label"].apply(
+                lambda v: f"{int(v)}" if isinstance(v, (int, float, np.number)) and not pd.isna(v) else str(v)
+            ) )
+            .set_index("StimR")["region_label"]
+            .to_dict()
+        )
+        # remove mapping for selected area (area_sel)
+        custom_label.update(stim_map)
+        if area in custom_label:
+            del custom_label[area]
+
     if np.sum(df_plot.show) > 0:
         plotter_connecto = ConnectogramPlotter(df_plot, ax)
         plotter_connecto.load_data(df_plot)
         plotter_connecto.show_plot_ax(color_style=cs, cmap=seismic_gray, vmin=vlim[0], vmax=vlim[1], arrow_end=True,
-                                      bi_dir=True)
+                                      bi_dir=True,custom_label=custom_label,plot_edge_label =False)
 
     return ax

@@ -10,6 +10,8 @@ from pathlib import Path
 
 # ==== CONFIGURATION ====
 PATH_Data = os.path.join(Path(__file__).resolve().parent.parent, 'Data')
+PATH_fig  ='/Figures' #TODO
+
 # ==== LOAD DATA ====
 labels = pd.read_csv(os.path.join(PATH_Data, 'data_atlas.csv'))
 con_all = pd.read_csv(os.path.join(PATH_Data, 'data_con_figures.csv'))
@@ -24,7 +26,7 @@ con_filtere_reverse = con_filtere[['sc_id', 'rc_id', 'Sig']].reset_index(drop=Tr
 con_filtere_reverse = con_filtere_reverse.rename(columns={'sc_id': 'rc_id', 'rc_id': 'sc_id', 'Sig': 'Sig_in'})
 con_filtere = con_filtere.merge(con_filtere_reverse, on=['sc_id', 'rc_id'], how='left')
 con_filtere['Sig_diff'] = con_filtere['Sig'] - con_filtere['Sig_in']
-con_filtere.loc[(con_filtere.Sig == 0) & (con_filtere.Sig_in == 0), 'Sig_diff'] = np.nan
+con_filtere.loc[(con_filtere.Sig == 0) & (con_filtere.Sig_in == 0), ['Sig_diff', 'peak_latency']] = np.nan
 
 # Threshold for filtering
 num_threshold = 10
@@ -67,10 +69,28 @@ def prepare_statistics(df_con, regions_all):
 regions_all = labels.drop_duplicates('region').sort_values('plot_order')['region'].values
 df_region_con = prepare_statistics(con_filtere[~np.isnan(con_filtere.Sig_diff)].reset_index(drop=True), regions_all)
 
+# df_region_con.to_excel(os.path.join(PATH_fig, 'DI_pairwise_region_stats.xlsx'))
 
 # prepare Connectogram DATA
 metrics = ['DI', 'Sig', 'peak_latency']
 df_mean_R = con_filtere.groupby(['StimR','ChanR'], as_index=False)[metrics].mean().reset_index(drop=True)
+# add number of outgoing connections included in analysis (Sig>0)
+# Compute number of Sig > 0 for each (StimR, ChanR)
+df_sig_count_out = (con_filtere
+                .groupby(['StimR', 'ChanR'])['DI'] #Sig
+                .apply(lambda x: x.count())     # counts non-NaN# .apply(lambda x: (x > 0).sum())
+                .reset_index(name='N_con_out'))
+
+df_sig_count_in = (con_filtere
+                .groupby(['StimR', 'ChanR'])['DI'] #Sig_in
+                .apply(lambda x: x.count())     # .apply(lambda x: (x > 0).sum())
+                .reset_index(name='N_con_in'))
+
+df_mean_R = df_mean_R.merge(df_sig_count_out, on=['StimR','ChanR'])
+df_mean_R = df_mean_R.merge(df_sig_count_in, on=['StimR','ChanR'])
+# element-wise max
+df_mean_R['N_con'] = np.maximum(df_mean_R['N_con_out'], df_mean_R['N_con_in'])
+
 df_mean_R['Subj'] ='EL000'
 
 df_mean_R['DI'] = df_mean_R['DI'].astype(float)
@@ -89,26 +109,28 @@ for r in regions_all:
 df_mean_R['Stim'] = df_mean_R.groupby(['StimR','ChanR']).ngroup()
 df_mean_R['Chan'] = df_mean_R.groupby(['StimR','ChanR']).ngroup()+len(df_mean_R.groupby(['StimR','ChanR']).ngroup())+1
 
-
+df_mean_R[['StimR', 'ChanR', 'DI', 'Sig', 'peak_latency', 'N_con']].to_csv(os.path.join(PATH_fig, 'region_DI_P.csv'))
 metric = 'DI'
 df_mean_R_connecto = df_mean_R.copy()
 df_mean_R_connecto['pair'] = df_mean_R_connecto['StimR']+'_'+df_mean_R['ChanR']
-# add stats for significane level
+#add stats for significane level
 df_region_con['colored'] = 0
 df_region_con.loc[(df_region_con.p_value_corrected<0.05), 'colored'] = 1
 df_mean_R_connecto = df_mean_R_connecto.merge(df_region_con[['StimR','ChanR', 'colored']], on = ['StimR','ChanR'], how='left').reset_index(drop=True)
 # add lw, value and dashed
-df_mean_R_connecto['lw'] = df_mean_R_connecto['Sig']
+df_mean_R_connecto['lw'] = df_mean_R_connecto['Sig']**2
+df_mean_R_connecto['region_label'] = df_mean_R_connecto['N_con']
 df_mean_R_connecto['value'] = df_mean_R_connecto[metric]
 df_mean_R_connecto['dashed'] = 0
-df_mean_R_connecto.loc[df_mean_R_connecto.peak_latency>0.065, 'dashed'] = 1
+df_mean_R_connecto.loc[df_mean_R_connecto.peak_latency>=0.065, 'dashed'] = 1
 
 result_reverse = df_mean_R_connecto[['StimR', 'ChanR', 'lw', 'value', 'dashed', 'colored']].reset_index(drop=True)
 result_reverse = result_reverse.rename(columns={'StimR': 'ChanR','ChanR': 'StimR' })
 result_reverse['lw_out'] = result_reverse['lw']
 result_reverse['value_out'] = result_reverse['value']
 result_reverse['colored_out'] = result_reverse['colored']
-df_mean_R_connecto = df_mean_R_connecto.merge(result_reverse[['StimR', 'ChanR', 'lw_out', 'value_out', 'colored_out']], on=['StimR', 'ChanR']).reset_index(drop=True)
+result_reverse['dashed_out'] = result_reverse['dashed']
+df_mean_R_connecto = df_mean_R_connecto.merge(result_reverse[['StimR', 'ChanR', 'lw_out', 'value_out', 'colored_out','dashed_out']], on=['StimR', 'ChanR']).reset_index(drop=True)
 
 # Create the plot
 fig, axes = plt.subplots(4, 3, figsize=(6, 6))
@@ -128,7 +150,11 @@ for i, area_sel in enumerate(regions_all):
     df_plot['plot_order'] = np.arange(len(df_plot)) + 2000
     df_plot.loc[(df_plot.StimR == area_sel), 'Stim'] = df_plot.loc[(df_plot.StimR == area_sel), 'plot_order']
     df_plot.loc[(df_plot.ChanR == area_sel), 'Chan'] = df_plot.loc[(df_plot.ChanR == area_sel), 'plot_order']
-
+    df_plot['edge_label'] = ""
+    df_plot['edge_label_out'] = ""
+    df_plot.loc[(df_plot.ChanR == area_sel)&(df_plot.DI>0), 'edge_label'] = -df_plot.loc[(df_plot.ChanR == area_sel)&(df_plot.DI>0), 'DI']
+    df_plot.loc[(df_plot.StimR == area_sel) & (df_plot.DI > 0), 'edge_label_out'] = df_plot.loc[
+        (df_plot.StimR == area_sel) & (df_plot.DI > 0), 'DI']
     # Plot using the helper function
     ax = connectogram_region(df_plot, ax, area=area_sel, metric='DI',
                              cs='area')  # Use the helper function to plot the connectogram
@@ -139,6 +165,7 @@ for j in range(i + 1, len(axes)):
     fig.delaxes(axes[j])
 
 plt.tight_layout()
+plt.savefig(os.path.join(PATH_fig, 'connectograms_all_lw3_sqr.svg'))
 plt.show()
 print('All connectograms')
 

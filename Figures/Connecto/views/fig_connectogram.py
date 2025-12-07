@@ -10,7 +10,7 @@ import matplotlib.lines as mlines
 from source.globals import ATLAS, PLOT_ATLAS, REGION_ABBREVIATION
 import views.utils_connectogram_read_data as rd
 from views.utils_connectogram_axes import plot_curved_text, despine, initialize_data_edges, get_line_style_and_width, \
-    get_colors, P
+    get_colors,get_edge_labels, P
 
 plt.rcParams.update({
     'font.family': 'arial',
@@ -98,7 +98,7 @@ class Connectogram(Figure):
         self.areas_c = rd.get_info_c(areas_c, n_nodes, self.r_seg, self.plot_hem)
         self.data_nodes = rd.get_nodes_coords(self.data_nodes, self.areas_c, self.areas_s, self.r_nodes)
 
-    def plot_nodes(self, show_label: bool = True):
+    def plot_nodes(self, show_label: bool = True, custom_label=None):
         if self.ax is None:
             raise ValueError("No axes instance provided.")
         ax = self.ax  # Use the class's ax if none provided
@@ -119,7 +119,13 @@ class Connectogram(Figure):
             ax.add_patch(inner_ring)
 
             if show_label:
-                abbr = REGION_ABBREVIATION.get(self.areas_c.region.values[i], 'Unknown')
+                # abbr = REGION_ABBREVIATION.get(self.areas_c.region.values[i], 'Unknown')
+                region_name = self.areas_c.region.values[i]
+                if isinstance(custom_label, dict) and region_name in custom_label:
+                    abbr = custom_label[region_name]
+                else:
+                    abbr = REGION_ABBREVIATION.get(region_name, 'Unknown')
+                    abbr = abbr + '.'
                 plot_curved_text(ax, self.r_seg, t[0], t[1], abbr)
 
         for i in range(len(self.areas_s)):
@@ -140,8 +146,16 @@ class Connectogram(Figure):
             y = self.areas_s.y1.values[i] + (self.areas_s.y0.values[i] - self.areas_s.y1.values[i]) / 2.
 
             if show_label:
-                abbr = REGION_ABBREVIATION.get(self.areas_s.region.values[i], 'Unknown')
-                ax.text(s=abbr + '.', x=-y, y=x, ha='center', va='center', fontsize=7, color='white')
+                region_name = self.areas_s.region.values[i]
+
+                if isinstance(custom_label, dict) and region_name in custom_label:
+                    abbr = custom_label[region_name]
+                else:
+                    abbr = REGION_ABBREVIATION.get(region_name, 'Unknown')
+                    abbr = abbr + '.'
+
+                ax.text(s=abbr, x=-y, y=x, ha='center', va='center',
+                        fontsize=7, color='white')
 
         # Nodes
         for i in range(len(self.data_nodes)):
@@ -187,7 +201,7 @@ class Connectogram(Figure):
         return [line]
 
     def show_con_all(self, edges: pd.DataFrame, color_style: str = 'area', lw_max: float = 2, bi_dir: bool = False,
-                     arrow_end: bool = False, cmap: str = 'hot', vmin: float = None, vmax: float = None):
+                     arrow_end: bool = False, plot_edge_label: bool = False, cmap: str = 'hot', vmin: float = None, vmax: float = None):
         colormap = plt.get_cmap(cmap) if cmap is not None else plt.get_cmap('hot')
 
         edges = initialize_data_edges(edges, bi_dir)
@@ -216,6 +230,7 @@ class Connectogram(Figure):
                 # get color and linestyle
                 lw, ls, lw_out, ls_out = get_line_style_and_width(edges, i, bi_dir)
                 col, col_out = get_colors(color_style, edges, i, r1, vmin, vmax, colormap, bi_dir)
+                edge_label_in, edge_label_out = get_edge_labels(edges, i)
                 # Set dashes only if linestyle is '--'
                 dashes = (2/lw, 1/lw) if ls == '--' else None
                 dashes_out = (2/lw_out, 1/lw_out) if ls_out == '--' else None
@@ -230,21 +245,6 @@ class Connectogram(Figure):
                 else:
                     lineIn = self.plot_with_dashes(ax, -xx[:, 1], xx[:, 0], col, 0.7, lw, ls, dashes)
                 self.linesIn.append(lineIn[0])
-                # if bi_dir:  # show different color in one line for two directional effect
-                #     lineOut = # ax.plot(-xx[:n_half, 1], xx[:n_half, 0], color=col_out, alpha=0.7, linewidth=lw_out,
-                #                       ls=ls_out, dahses = dashes)
-                #     lineIn = ax.plot(-xx[n_half - 1:, 1], xx[n_half - 1:, 0], color=col, alpha=0.7, linewidth=lw,
-                #                      ls=ls, dashes = dashes)
-                #     self.linesOut.append(lineOut[0])
-                # elif color_style == 'area':
-                #     lineOut = ax.plot(-xx[:n_half, 1], xx[:n_half, 0], color=col_out, alpha=0.7, linewidth=lw_out,
-                #                       ls=ls_out, dashes = dashes)
-                #     lineIn = ax.plot(-xx[n_half - 1:, 1], xx[n_half - 1:, 0], color=col, alpha=0.7, linewidth=lw,
-                #                      ls=ls, dashes = dashes)
-                #     self.linesOut.append(lineOut[0])
-                # else:
-                #     lineIn = ax.plot(-xx[:, 1], xx[:, 0], color=col, alpha=0.7, linewidth=lw, dashes = dashes)
-                # self.linesIn.append(lineIn[0])
 
                 # Arrow head
                 if arrow_end:
@@ -273,6 +273,30 @@ class Connectogram(Figure):
                             arrowstyle='<|-'
                         )
                         ax.add_patch(arrow)
+                # Add edge labels if requested
+                if plot_edge_label:
+                    offset = 20
+                    ax.text(
+                        -xx[offset, 1],
+                        xx[offset, 0],
+                        edge_label_in,
+                        fontsize=6,
+                        color='k',
+                        ha='center',
+                        va='center',
+                        zorder=10
+                    )
+
+                    ax.text(
+                        -xx[-offset, 1],  # flip x as in your plot
+                        xx[-offset, 0],
+                        edge_label_out,
+                        fontsize=6,
+                        color='k',
+                        ha='center',
+                        va='center',
+                        zorder=10
+                    )
 
         ax.set_xlim(self.xlim)
         ax.set_ylim(self.ylim)

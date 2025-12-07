@@ -10,6 +10,7 @@ from pathlib import Path
 # ==========================
 
 PATH_Data = os.path.join(Path(__file__).resolve().parent.parent, 'Data')
+PATH_fig  = '/Figures' # TODO
 # Region of interest: choose 'Hippocampus' or 'Amygdala'
 REGION_SEL = 'Hippocampus'
 

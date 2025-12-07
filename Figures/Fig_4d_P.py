@@ -8,32 +8,14 @@ import matplotlib.pyplot as plt
 from connectogram_helpers import connectogram_region_sleep_mod, reorder_letters
 from pathlib import Path
 
-plt.rcParams.update({
-    'font.family': 'arial',
-    'font.size': 12,
-    'xtick.labelsize': 8,
-    'ytick.labelsize': 8,
-    'legend.fontsize': 9,
-    'svg.fonttype': 'none',
-    'font.size': 10,
-    'axes.titlesize': 10,
-    'axes.labelsize': 8,
-    'xtick.labelsize': 8,
-    'ytick.labelsize': 8,
-    'legend.fontsize': 9,
-    'figure.titlesize': 10
-})
-
-
 # ==== CONFIGURATION ====
 
 PATH_Data = os.path.join(Path(__file__).resolve().parent.parent, 'Data')
 PATH_fig  = '/Figures' # TODO
-
 # ==== LOAD DATA ====
 labels = pd.read_csv(os.path.join(PATH_Data, 'data_atlas.csv'))
 df_con = pd.read_csv(os.path.join(PATH_Data, 'data_con_figures.csv'))
-df_stats = pd.read_csv(os.path.join(PATH_Data, 'sleep_mod_stats.csv'))
+df_stats = pd.read_csv(os.path.join(PATH_Data, 'sleep_P_stats.csv'))
 # Filter out unwanted subjects and local channels
 df_con = df_con[
     (~np.isin(df_con.Subj, ['EL012', 'EL013'])) &
@@ -65,7 +47,7 @@ df_mean_R['Stim'] = df_mean_R.groupby(['StimR','ChanR']).ngroup()
 df_mean_R['Chan'] = df_mean_R.groupby(['StimR','ChanR']).ngroup()+len(df_mean_R.groupby(['StimR','ChanR']).ngroup())+1
 
 # calculate connectogram plot for each sleep state
-value = 'Median_norm' # 'Median_dif', 'Median_norm'
+value = 'Median_dif' # 'Median_dif', 'Median_norm'
 for state in ['NREM', 'REM']:
     columns_to_keep = [
         'StimR', 'ChanR', 'Sig', 'peak_latency', f'Norm_{state}_Mag',
@@ -89,6 +71,7 @@ for state in ['NREM', 'REM']:
     df_connectogram['dashed'] = df_connectogram['peak_latency'] > 0.065
     df_connectogram['region_label'] = df_connectogram['N_con']
 
+    df_connectogram[['StimR', 'ChanR', 'DI', 'Sig', 'peak_latency', 'N_con']].to_csv(os.path.join(PATH_fig, f'Region_P_{state}.csv'))
     result_reverse = df_connectogram[['StimR', 'ChanR', 'colored', 'dashed', 'lw', 'value']].reset_index(drop=True)
     result_reverse = result_reverse.rename(columns={'StimR': 'ChanR', 'ChanR': 'StimR'})
     result_reverse['colored_out'] = result_reverse['colored']
@@ -118,8 +101,8 @@ for state in ['NREM', 'REM']:
         df_plot.loc[(df_plot.ChanR == area_sel), 'Chan'] = df_plot.loc[(df_plot.ChanR == area_sel), 'plot_order']
 
         # Plot using the helper function
-        ax = connectogram_region_sleep_mod(df_plot, ax, area=area_sel,
-                                 cs='colormap', vlim = [-0.25, 0.25])  # Use the helper function to plot the connectogram
+        ax = connectogram_region_sleep_mod(df_plot, ax, vlim=[-0.25, 0.25], area=area_sel,
+                                 cs='colormap')  # Use the helper function to plot the connectogram
         ax.set_aspect(1.1)
 
     # Hide empty subplots (if there are any left)
@@ -127,7 +110,7 @@ for state in ['NREM', 'REM']:
         fig.delaxes(axes[j])
 
     plt.tight_layout()
-    plt.savefig(os.path.join(PATH_fig, f'Connectogram_Mag_{state}.svg'))
+    plt.savefig(os.path.join(PATH_fig, f'Connectogram_P_{state}.svg'))
     plt.show()
     print(f'All connectograms in {state}-modulation')
 
