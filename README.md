@@ -1,7 +1,8 @@
-Repository Overview
-
+# Repository Overview
+## Overview
 This repository contains the analysis code, preprocessed data, and figure-generation scripts used in the study:
 
+## Authors and Affiliations
 “Directed cortico-limbic dialogue in the human brain”
 Authors: 
 Ellen van Maren1,2, Camille G. Mignardot1, Roland Widmer1, Cecilia Friedrichs-Maeder1, Juan Anso2, Päivi Nevalainen1,3, Markus Fuchs1, Claudio Pollo4, Athina Tzovara1,5, Timothée Proix6, Kaspar A. Schindler1, Maxime O. Baud1 
@@ -14,20 +15,20 @@ Affiliations:
 5Institute of Computer Science, University of Bern, Bern, Switzerland. 
 6Institute for Neuroinformatics, University of Zürich, ETH Zürich, Zürich, Switzerland. 
 
-Folder Structure
-1. Analysis/
+## Folder Structure
+### Analysis
 
 Contains all scripts used to process EEG recordings and detect single-trial cortico-cortical evoked potentials (CCEPs).
 
-2. Data/
+### Data
 
 Provides the preprocessed datasets used to generate the figures included in the main text and supplementary materials of the manuscript.
 
-3. Figures/
+### Figures
 
 Includes the code required to reproduce all main and supplementary figures for the paper.
 
-Related Repository
+## Related Repository
 
 For the Connecto App used for interactive visualization, please see:
 👉 Connecto App Repository: https://github.com/neuro-elab/EvM_Connectivity/releases/tag/Connecto_v0.3
