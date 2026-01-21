@@ -14,7 +14,7 @@ Ellen van Maren<sup>1</sup>, Camille G. Mignardot<sup>1, 5</sup>, Roland Widmer<
 <sup>5</sup> Institute of Computer Science, University of Bern, Bern, Switzerland.  
 <sup>6</sup> Institute for Neuroinformatics, University of Zürich, ETH Zürich, Zürich, Switzerland.  
 
-Received: 21 June 2025 / Accepted: 19 December 2025 / Published: January 2026
+Received: 21 June 2025 / Accepted: 19 December 2025
 
 Corresponding author: Maxime O. Baud, maxime.baud.neuro(at)gmail.com
 
