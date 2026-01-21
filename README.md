@@ -33,5 +33,5 @@ Includes the code required to reproduce all main and supplementary figures for t
 
 ## Related Repository
 
-For the Connecto App used for interactive visualization, please see:
+For the Connecto App used for interactive visualization, please see:  
 👉 Connecto App Repository: https://github.com/neuro-elab/EvM_Connectivity/releases
